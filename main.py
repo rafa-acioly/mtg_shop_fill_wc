@@ -18,8 +18,24 @@ def get_payload(url):
 
 def format_payload(data, category):
     # TODO: Preencher o campo "attributes" no payload com as condições default da carta
+    if 'card_faces' in data:
+        images = []
+        name = ""
+        for i, face in enumerate(data['card_faces']):
+            images.append({
+                "src": face['images_uri']['normal'], "position": i
+            })
+            name += "{face} / ".format(face=face['name'])
+        name = name.strip(" /")
+    else:
+        images = [{
+            "src": data['images_uri']['normal'],
+            "position": 0
+        }]
+        name = data['name']
+
     return {
-        "name": data['name'],
+        "name": name,
         "sku": "{card_set}{number}".format(card_set=data['set'], number=data['collector_number'])
         "type": "simple",
         "in_stock": False,
@@ -36,12 +52,7 @@ def format_payload(data, category):
                 "id": category['id']
             },
         ],
-        "images": [
-            {
-                "src": data['images_uri']['normal'],
-                "position": 0
-            }
-        ]
+        "images": images
     }
 
 
