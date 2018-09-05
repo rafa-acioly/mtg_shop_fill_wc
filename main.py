@@ -3,11 +3,21 @@ from woocommerce import API
 import requests
 
 
+cli = API(
+    url="http://localhost:8888/wordpress",
+    consumer_key="ck_11091e59c50bfefdc54856cb57c24ab439c7718f",
+    consumer_secret="cs_90ec825e81bdea4bc93fe2ccbd578632a11f472a",
+    wp_api=True,
+    version="wc/v2"
+)
+
+
 def get_payload(url):
     return requests.get(url).json()
 
 
 def format_payload(data, category):
+    # TODO: Preencher o campo "attributes" no payload com as condições default da carta
     return {
         "name": data['name'],
         "sku": "{card_set}{number}".format(card_set=data['set'], number=data['collector_number'])
@@ -48,14 +58,6 @@ def save_product(cards, category):
 
 
 def save_category(category):
-    cli = API(
-        url="http://localhost:8888/wordpress",
-        consumer_key="ck_11091e59c50bfefdc54856cb57c24ab439c7718f",
-        consumer_secret="cs_90ec825e81bdea4bc93fe2ccbd578632a11f472a",
-        wp_api=True,
-        version="wc/v2"
-    )
-
     category_data = {
         "name": category['name'],
         "slug": category['code'],
