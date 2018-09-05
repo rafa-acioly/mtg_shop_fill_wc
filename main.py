@@ -8,11 +8,43 @@ def get_payload(url):
 
 
 def format_payload(data, category):
-    pass
+    return {
+        "name": data['name'],
+        "sku": "{card_set}{number}".format(card_set=data['set'], number=data['collector_number'])
+        "type": "simple",
+        "in_stock": False,
+        "regular_price": "0.00",
+        "description": "",
+        "short_description": "",
+        "dimensions": {
+            "length": "10",
+            "width": "10",
+            "height": "5"
+        }
+        "categories": [
+            {
+                "id": category['id']
+            },
+        ],
+        "images": [
+            {
+                "src": data['images_uri']['normal'],
+                "position": 0
+            }
+        ]
+    }
 
 
-def save_product(product):
-    pass
+def save_product(cards, category):
+    for card in cards:
+        payload = format_payload(card, category)
+        saved = cli.post("products", payload)
+
+        if saved.status_code == 201:
+            card_data = saved.json()
+            print("Card saved on ecomm: {name}".format(name=card_data['name']))
+        else:
+            print("---Error trying to save card: {err}".format(err=saved.text))
 
 
 def save_category(category):
@@ -27,7 +59,7 @@ def save_category(category):
     category_data = {
         "name": category['name'],
         "slug": category['code'],
-        "description": "cards from set {set_name}".format(set_name=category['name'])
+        "description": "cards from set {name}".format(name=category['name'])
     }
 
     return cli.post("products/categories", category_data)
@@ -40,14 +72,22 @@ def main():
 
         saved = save_category(card_set)
 
-        if saved.status_code == 201:
-            response = saved.json()
-            print("Category saved with id:{id} for set: {card_set}".format(
-                id=response['id'],
-                card_set=response['name'])
-            )
-        else:
-            print(saved.text)
-            sys.exit()
+        if not saved.status_code == 201:
+            print("Error: {err}".format(err=saved.text))
+            continue
+
+        wc_category = saved.json()
+        print("Category saved with id:{id} for set: {card_set}".format(
+            id=wc_category['id'],
+            card_set=wc_category['name'])
+        )
+
+        cards_payload = get_payload(card_set['search_uri'])
+        save_product(cards_payload['data'], wc_category)
+
+        while cards_payload['has_more']:
+            save_product(cards_payload['data'], wc_category)
+            cards_payload = get_payload(cards_payload['next_page'])
+
 
 if __name__ == '__main__': main()
